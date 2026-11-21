@@ -1,5 +1,6 @@
 import type { Shift } from "../../../shared/types";
 import { compatibleStand, occupiedFlight } from "../lib/geometry";
+import { standBlocked } from "../../emergency";
 export function StandPicker({
   state,
   onAssign,
@@ -19,7 +20,12 @@ export function StandPicker({
         {state.stands.map((s) => (
           <button
             key={s.id}
-            disabled={!!occupiedFlight(state, s.id) || !compatibleStand(s, f)}
+            disabled={
+              !!occupiedFlight(state, s.id) ||
+              !compatibleStand(s, f) ||
+              standBlocked(state, s.id)
+            }
+            title={standBlocked(state, s.id) ? "机位处于隔离区" : undefined}
             className={s.id === state.selectedStandId ? "chosen" : ""}
             onClick={() => onSelect(s.id)}
           >
@@ -34,7 +40,8 @@ export function StandPicker({
         disabled={
           !valid ||
           !!occupiedFlight(state, valid.id) ||
-          !compatibleStand(valid, f)
+          !compatibleStand(valid, f) ||
+          standBlocked(state, valid.id)
         }
         onClick={() => valid && onAssign(valid.id)}
       >

@@ -3,6 +3,7 @@ import { FlightBoard, assignStand, selectFlight } from "../features/flights";
 import { ApronMap, selectStand } from "../features/apron";
 import { FleetPanel, selectVehicle } from "../features/fleet";
 import { dispatchService } from "../features/services";
+import { EmergencyPanel, selectIncident } from "../features/emergency";
 import {
   SessionBar,
   ScoreStrip,
@@ -54,9 +55,12 @@ export function App() {
               掌控机坪的每一分钟<span>。</span>
             </h1>
           </div>
-          <div className="field-badge">
+          <div className={`field-badge ${state.incidents.length ? "alert" : ""}`}>
             <span className="live-dot" />
-            机场运行正常 <b>SHA / ZSSS</b>
+            {state.incidents.length
+              ? `应急处置中 · ${state.incidents.length} 起事故`
+              : "机场运行正常"}{" "}
+            <b>SHA / ZSSS</b>
           </div>
         </div>
         <ScoreStrip state={state} />
@@ -70,7 +74,9 @@ export function App() {
               state={state}
               onStand={(id) => setState((s) => selectStand(s, id))}
               onFlight={(id) => setState((s) => selectFlight(s, id))}
+              onIncident={(id) => setState((s) => selectIncident(s, id))}
             />
+            <EmergencyPanel state={state} onChange={setState} />
             <FleetPanel
               state={state}
               onSelect={(id) => setState((s) => selectVehicle(s, id))}
@@ -90,7 +96,10 @@ export function App() {
         </div>
         <footer>
           <span>APRON 07 · 地面有序，天空自由。</span>
-          <span>操作提示：选择航班 → 分配机位 → 派遣车辆 → 批准离港</span>
+          <span>
+            操作提示：选择航班 → 分配机位 → 派遣车辆 → 批准离港 ·
+            事故处置：划隔离区 → 派救援 → 检查 → 解除
+          </span>
           <span>
             <i className="live-dot" />
             {state.paused ? "SIMULATION PAUSED" : "SIMULATION LIVE"}

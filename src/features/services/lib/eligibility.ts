@@ -1,5 +1,6 @@
 import type { Shift, ServiceKind } from "../../../shared/types";
 import { serviceCatalog } from "../model/catalog";
+import { fullStopActive, standBlocked } from "../../emergency";
 export function serviceBlockReason(
   s: Shift,
   flightId: string,
@@ -9,6 +10,8 @@ export function serviceBlockReason(
     task = s.services.find((x) => x.flightId === flightId && x.kind === kind);
   if (!f || f.status !== "parked") return "请先分配机位";
   if (!task || task.status !== "pending") return "任务已派遣";
+  if (fullStopActive(s)) return "全面停场中，暂停派遣";
+  if (f.standId && standBlocked(s, f.standId)) return "机位处于隔离区，暂停派遣";
   if (
     serviceCatalog[kind].requires.some(
       (k) =>

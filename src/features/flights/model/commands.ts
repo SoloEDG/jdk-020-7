@@ -1,11 +1,24 @@
 import type { Shift } from "../../../shared/types";
 import { copyShift, record } from "../../../shared/document";
 import { flightReady } from "../lib/readiness";
+import { fullStopActive, standBlocked } from "../../emergency";
 export function assignStand(state: Shift, id: string, standId: string): Shift {
   const s = copyShift(state),
     f = s.flights.find((x) => x.id === id),
     stand = s.stands.find((x) => x.id === standId);
   if (!f || !stand) return state;
+  if (standBlocked(s, standId)) {
+    s.conflicts++;
+    s.score -= 10;
+    record(
+      s,
+      fullStopActive(s)
+        ? "全面停场中，暂停分配机位"
+        : `机位 ${standId} 处于隔离区，无法接收航班`,
+      "warning",
+    );
+    return s;
+  }
   const occupied = s.flights.some(
     (x) => x.standId === standId && x.status !== "departed",
   );
@@ -29,6 +42,16 @@ export function departFlight(state: Shift, id: string): Shift {
   const s = copyShift(state),
     f = s.flights.find((x) => x.id === id);
   if (!f) return state;
+  if (f.standId && standBlocked(s, f.standId)) {
+    record(
+      s,
+      fullStopActive(s)
+        ? "全面停场中，离港暂停"
+        : `机位 ${f.standId} 处于隔离区，暂停离港`,
+      "warning",
+    );
+    return s;
+  }
   if (f.status !== "parked" || !flightReady(s, id)) {
     record(s, "离港未获许可：请先完成全部地勤任务", "warning");
     return s;

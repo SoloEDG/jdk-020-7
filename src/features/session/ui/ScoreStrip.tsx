@@ -12,7 +12,7 @@ export function ScoreStrip({ state }: { state: Shift }) {
         <p>
           本班得分
           <strong>
-            {state.score}
+            {Math.round(state.score)}
             <small>PTS</small>
           </strong>
         </p>

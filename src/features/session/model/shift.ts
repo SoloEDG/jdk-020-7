@@ -3,6 +3,7 @@ import { initialFlights } from "../../flights";
 import { initialStands } from "../../apron";
 import { initialServices } from "../../services";
 import { initialVehicles } from "../../fleet";
+import { initialRescueUnits } from "../../emergency";
 export function createShift(): Shift {
   const flights = initialFlights();
   return {
@@ -16,6 +17,11 @@ export function createShift(): Shift {
     stands: initialStands(),
     services: initialServices(flights),
     vehicles: initialVehicles(),
+    incidents: [],
+    incidentLog: [],
+    rescueUnits: initialRescueUnits(),
+    nextIncidentId: 1,
+    nextIncidentAt: 150,
     events: [
       { id: 0, time: 0, text: "早班开始 · 3 架航班等待机位分配", tone: "info" },
     ],

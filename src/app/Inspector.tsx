@@ -4,6 +4,7 @@ import { flightReady, departFlight, statusLabels } from "../features/flights";
 import { StandPicker } from "../features/apron";
 import { ServicePanel } from "../features/services";
 import { EventLog } from "../features/session";
+import { standBlocked } from "../features/emergency";
 export function Inspector({
   state,
   onChange,
@@ -17,7 +18,8 @@ export function Inspector({
   onAssign: (id: string) => void;
   onDispatch: (k: ServiceKind, v: string) => void;
 }) {
-  const f = state.flights.find((x) => x.id === state.selectedFlightId)!;
+  const f = state.flights.find((x) => x.id === state.selectedFlightId)!,
+    blocked = f.standId ? standBlocked(state, f.standId) : false;
   return (
     <aside className="inspector">
       <div className="inspector-heading">
@@ -69,7 +71,8 @@ export function Inspector({
       <button
         className="primary depart-button"
         data-testid="depart"
-        disabled={!flightReady(state, f.id) || f.status !== "parked"}
+        disabled={!flightReady(state, f.id) || f.status !== "parked" || blocked}
+        title={blocked ? "机位处于隔离区，暂停离港" : undefined}
         onClick={() => onChange(departFlight(state, f.id))}
       >
         {f.status === "departed"

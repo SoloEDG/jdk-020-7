@@ -1,12 +1,14 @@
 import type { Shift } from "../../../shared/types";
 import { occupiedFlight, compatibleStand } from "../lib/geometry";
+import { IncidentLayer, standBlocked } from "../../emergency";
 import { Aircraft } from "./Aircraft";
 interface Props {
   state: Shift;
   onStand: (id: string) => void;
   onFlight: (id: string) => void;
+  onIncident: (id: string) => void;
 }
-export function ApronMap({ state, onStand, onFlight }: Props) {
+export function ApronMap({ state, onStand, onFlight, onIncident }: Props) {
   const selected = state.flights.find((f) => f.id === state.selectedFlightId);
   return (
     <section className="map-shell">
@@ -49,6 +51,24 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
           <filter id="shadow">
             <feDropShadow dx="0" dy="6" stdDeviation="6" floodOpacity=".13" />
           </filter>
+          <pattern
+            id="alertHatch"
+            width="9"
+            height="9"
+            patternTransform="rotate(45)"
+            patternUnits="userSpaceOnUse"
+          >
+            <rect width="9" height="9" fill="#c2542f" fillOpacity="0.07" />
+            <line
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="9"
+              stroke="#c2542f"
+              strokeOpacity="0.3"
+              strokeWidth="2.5"
+            />
+          </pattern>
         </defs>
         <rect width="940" height="660" fill="#c9cebd" />
         <rect width="940" height="660" fill="url(#grass)" />
@@ -118,7 +138,8 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
         ))}
         {state.stands.map((stand) => {
           const f = occupiedFlight(state, stand.id),
-            active = state.selectedStandId === stand.id;
+            active = state.selectedStandId === stand.id,
+            blocked = standBlocked(state, stand.id);
           const compatible = selected && compatibleStand(stand, selected);
           return (
             <g
@@ -148,6 +169,30 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
                 strokeWidth={active ? 2 : 1}
                 strokeDasharray={f ? undefined : "5 5"}
               />
+              {blocked && (
+                <>
+                  <rect
+                    x={stand.x - 82}
+                    y={stand.y - 80}
+                    width="164"
+                    height="155"
+                    rx="11"
+                    fill="url(#alertHatch)"
+                    stroke="#c2542f"
+                    strokeWidth="1.4"
+                    strokeDasharray="7 5"
+                    pointerEvents="none"
+                  />
+                  <text
+                    x={stand.x}
+                    y={stand.y - 68}
+                    textAnchor="middle"
+                    className="blocked-label"
+                  >
+                    封锁
+                  </text>
+                </>
+              )}
               <path
                 d={`M${stand.x} ${stand.y + 79}V${stand.y - 48}M${stand.x - 15} ${stand.y - 48}H${stand.x + 15}`}
                 fill="none"
@@ -264,8 +309,18 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
                 className="moving-ring"
               />
             )}
+            {v.status === "trapped" && (
+              <circle
+                r="17"
+                fill="none"
+                stroke="#c2542f"
+                strokeWidth="1.6"
+                strokeDasharray="4 3"
+              />
+            )}
           </g>
         ))}
+        <IncidentLayer state={state} onIncident={onIncident} />
         <g transform="translate(880 60)">
           <circle r="25" fill="#f3f1e8" fillOpacity=".8" />
           <path d="M0 -17L6 10L0 5L-6 10Z" fill="#334d50" />
@@ -294,6 +349,10 @@ export function ApronMap({ state, onStand, onFlight }: Props) {
         <span>
           <i className="legend-selected" />
           当前选择
+        </span>
+        <span>
+          <i className="legend-blocked" />
+          隔离封锁
         </span>
         <span className="map-scale">0 ━━━━━ 100 m</span>
       </div>
